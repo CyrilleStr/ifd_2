@@ -1,9 +1,6 @@
 #include <Arduino.h>
-// include écran oled
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+/* include écran oled */
+
 
 /******Definition******/
 
@@ -15,13 +12,16 @@ int valve2PIN = 4;
 int valve3PIN = 5;
 int valve4PIN = 6;
 int pompePIN = 7;
-volatile double waterFlow;
+volatile float waterFlow;
 unsigned long time_now = 0;
 
 /******Prototype******/
 
-bool time_loop(unsigned long start_millis,long int delay);
+bool time_loop(unsigned long start_millis,unsigned int delay);
 void pulse();
+boolean remplir(float prop[]);
+bool debitmetre(float prop);
+float* serialEvent();
 
 /******Main code******/
 
@@ -36,17 +36,28 @@ void setup() {
   pinMode(valve3PIN,OUTPUT);
   pinMode(valve4PIN,OUTPUT);
   pinMode(pompePIN,OUTPUT);
-  // écran.begin();
-  // écran.setPowerSave(0);
-  // écran.setFont(u8x8_font_chroma48medium8_r);
-  // écran.setFlipMode(0);
+  /*code pour les tests de l'arduino*/
+  float prop[4] = {0.20,0.3,0.2,0.3};
+  remplir(prop);
+  
 }
 
 void loop() {
+  /*code pour tester l'esp*/
   if(Serial.available()){
     float* prop = serialEvent();
-    remplir(prop);
-  }
+    for(int i=0;i<4;i++){
+      Serial.println(prop[i]);
+    }
+  } 
+
+  /* code final */
+  // if(Serial.available()){
+  //   float* prop = serialEvent();
+  //   Serial.println("Remplissage en cours");
+  //   remplir(prop);
+  // }
+  delete[] prop;
 }
 
 /******Functions******/
@@ -73,8 +84,10 @@ boolean remplir(float prop[]){
       Serial.println("Ouverture vanne");
       digitalWrite(valves[contenant],HIGH);
       // attend...
-      if(!debitmetre(prop[contenant])){
-        // Affiche: Le contenant N°(contenant+1) est vide
+      if(!debitmetre(prop[contenant])){ // plus de 10 sec passées = le contenant est vide
+        Serial.println("Contenant vide :");
+        Serial.println(contenant+1);
+        return false;
       }
       Serial.println("Debit écoulé");
       // Fermer valve
@@ -89,15 +102,11 @@ boolean remplir(float prop[]){
   digitalWrite(pompePIN,LOW);
   Serial.println("Fermeture pompe");
 
-  // for(int j=0;j<4;j++){
-  //   Serial.println("Contenant %d: %s",j+1,r[j]);
-  // }
   return true;
-
 }
 
 /**
- * @brief ttend le temps que la quantité de boissons demandé soit écoulé
+ * @brief Attend le temps que la quantité de boissons demandé soit écoulé
  * 
  * @param prop float
  * @return true La proportion a bien été versée
@@ -122,18 +131,23 @@ void pulse(){
   waterFlow += 1.0/(5.880); //measure the quantity of square wave
 }
 
+/**
+ * @brief Fonction qui répcupère les proportions envoyé par l'ESP
+ * 
+ * @return float* Tableau de proportions
+ */
 float* serialEvent(){
-  float prop[4]={0,0,0,0};
+  float* prop = new float[4];
   int i=0;
   while(Serial.available()){
     prop[i] = Serial.read();
-    Serial.println(prop[i]);
+    // Serial.println(prop[i]);
     i++;
   }
   return prop;
 }
 
-bool time_loop(unsigned long start_millis,long int delay){
+bool time_loop(unsigned long start_millis,unsigned int delay){
   while(millis() - start_millis < delay){}
   return true;
 }
