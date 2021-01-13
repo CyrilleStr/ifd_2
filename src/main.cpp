@@ -9,8 +9,7 @@
 
 /******Definition******/
 
-
-#define CONTENANCE 30; // Le verre peut contenir 100 mL
+#define CONTENANCE 100; // Le verre peut contenir 100 mL
 
 float prop[4];
 int debimeterPIN = 2;
@@ -24,7 +23,7 @@ volatile float waterFlow = 0;
 unsigned long time_now = 0;
 int xx=40;
 int yy=0;
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
 // Definition for the oled Displayer
 
@@ -73,24 +72,21 @@ void loop() {
     char c;
     while(Serial3.available() > 0){      
        c = Serial3.read();
-      inString += c;
-      if(c == ']'){
-        Serial.println(inString); 
-        if(inString[0] == '#'){
-          decodage(inString);
-          Serial.println("Les propotions des contenants 1,2,3 et 4 sont respectivement :");
-          Serial.println(prop[0]);
-          Serial.println(prop[1]);
-          Serial.println(prop[2]);
-          Serial.println(prop[3]);
-          float proportions[4] = {prop[0],prop[1],prop[2],prop[3]};
-          remplir(proportions);
-        }
-        inString = "";
-      }
+      inString += c;        
     }
-    
-  }
+    Serial.println(inString); 
+    if(inString[0] == 'A' || inString[0] == 'B' || inString[0] == 'C' || inString[0] == 'D'){
+        decodage(inString);
+        Serial.println("Les propotions des contenants 1,2,3 et 4 sont respectivement :");
+        Serial.println(prop[0]);
+        Serial.println(prop[1]);
+        Serial.println(prop[2]);
+        Serial.println(prop[3]);
+        float proportions[4] = {prop[0],prop[1],prop[2],prop[3]};
+        remplir(proportions);
+      }
+      inString = "";
+  } 
   delay(1000);
 }
 
